@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router(); 
 const db = require("../db/connection");
+const md5 = require("md5");
 
 // Route POST pour inscription
 router.post("/register", async (req, res) => {
@@ -11,9 +12,10 @@ router.post("/register", async (req, res) => {
     try {
 
         // Insérer l'utilisateur dans la base de données
+        const hashedPassword = md5(password);
         db.query(
             "INSERT INTO user (username, password) VALUES (?, ?)",
-            [username, password],
+            [username, hashedPassword],
             (err, result) => {
                 if (err) {
                     if (err.code === "ER_DUP_ENTRY") {
@@ -56,7 +58,7 @@ router.post("/login", (req, res) => {
             const user = results[0];
 
             // Comparer le mot de passe avec celui en base de données
-            const match = password === user.password;
+            const match = md5(password) === user.password;
             if (!match) {
                 return res.send("Nom d'utilisateur ou mot de passe incorrect");
             }
@@ -85,10 +87,48 @@ router.get("/logout", (req, res) => {
         }
 
         // Redirige vers la page d'accueil
-        res.redirect("/index");
+        res.redirect("/");
+    });
+});
+
+
+// GET /delaccount
+router.get("/delaccount", (req, res) => {
+    const userId = req.session.user.id;
+
+    // Supprimer l'utilisateur de la base de données
+    db.query(
+        "DELETE FROM user WHERE id_user = ?",
+        [userId],
+        (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Erreur serveur");
+            }
+        }
+    );
+    // Supprimer tous les messages de l'utilisateur
+    db.query(
+        "DELETE FROM message WHERE id_user = ?",
+        [userId],
+        (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send("Erreur serveur");
+            }
+        }
+    );
+    // Détruire la session
+    req.session.destroy(err => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send("Erreur lors de la suppression du compte");
+        }
+    // Redirige vers la page d'accueil
+    res.redirect("/");
     });
 });
 
 
 
-module.exports = router;  // <-- ne pas oublier d'exporter
+module.exports = router;

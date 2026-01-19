@@ -12,23 +12,23 @@ router.get("/articles", (req, res) => {
 
     // Récupérer les messages avec les noms d'utilisateur
     db.query(
-        `SELECT m.content, u.username, m.id_message
-         FROM message m
-         JOIN user u ON m.id_user = u.id_user
-         ORDER BY m.id_message DESC`,
+        `SELECT m.id_message, m.content, m.id_user, u.username
+        FROM message m
+        JOIN user u ON m.id_user = u.id_user
+        ORDER BY m.id_message DESC`,
         (err, results) => {
             if (err) {
                 console.error(err);
                 return res.status(500).send("Erreur serveur");
             }
 
-            // Rendre la vue avec les messages et l'utilisateur connecté
             res.render("articles", {
                 messages: results,
                 user: req.session.user
             });
         }
     );
+
 });
 
 // POST - créer un message
@@ -50,19 +50,24 @@ router.post("/messages", (req, res) => {
 
 
     // Insérer le message dans la base de données
-    db.query(
-        "INSERT INTO message (id_user, content) VALUES (?, ?)",
-        [userId, content],
-        (err) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).send("Erreur serveur");
-            }
+    if (!content || content.trim() === "") {
+        return res.status(400).send("Le message ne peut pas être vide");
+    }
+    else{
+        db.query(
+            "INSERT INTO message (id_user, content) VALUES (?, ?)",
+            [userId, content],
+            (err) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).send("Erreur serveur");
+                }
 
-            // Rediriger vers la page des articles
-            res.redirect("/articles");
-        }
-    );
+                // Rediriger vers la page des articles
+                res.redirect("/articles");
+            }
+        );
+    }
 });
 
 // GET formulaire édition

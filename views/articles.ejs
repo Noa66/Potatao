@@ -9,6 +9,8 @@
 
 <div class="container">
     <a href="/logout" class="btn_red">Se déconnecter</a>
+    <a href="/delaccount" class="btn_red">Supprimer le compte</a>
+
     <h1>Messages</h1>
 
     <p>
@@ -28,8 +30,10 @@
     <div class="article">
         <h3><%= message.username %></h3>
         <p><%= message.content %></p>
-        <a class="link" href="/messages/edit/<%= message.id_message %>">Modifier</a>
-        <a class="link_delete" href="/messages/delete/<%= message.id_message %>">Supprimer</a>
+        <% if (message.id_user === user.id) { %>
+            <a class="link" href="/messages/edit/<%= message.id_message %>">Modifier</a>
+            <a class="link_delete" href="/messages/delete/<%= message.id_message %>">Supprimer</a>
+        <% } %>
     </div>
 <% }) %>
 
